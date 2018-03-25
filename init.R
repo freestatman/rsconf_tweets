@@ -13,20 +13,27 @@ TWEET_REFRESH_ENABLED <- FALSE
 if (!dir.exists('data')) system('mkdir -p data')
 setCacheDir('data')
 
+library(rtweet)
 cacheFile <- 'data/rsconf_tweets.rds'
 
-# This should go in ~/.Renviron but...
-# .TWITTER_APP="rtweet_things"
-# .TWITTER_CONSUMER_KEY="xxx"
-# .TWITTER_CONSUMER_SECRET="xxx"
-# .TWITTER_PAT="./rtweet.rds"
 
-# Twitter token created with...
-# twitter_token <- create_token(
-#   app = .TWITTER_APP,
-#   consumer_key = .TWITTER_CONSUMER_KEY,
-#   consumer_secret = .TWITTER_CONSUMER_SECRET
-# )
+if (FALSE) {    # secrets
+  # This should go in ~/.Renviron but...
+  .TWITTER_APP=""
+  .TWITTER_CONSUMER_KEY=""
+  .TWITTER_CONSUMER_SECRET=""
+  .TWITTER_PAT="./rtweet.rds"
+  
+  # Twitter token created with...
+  twitter_token <- create_token(
+    app = .TWITTER_APP,
+    consumer_key = .TWITTER_CONSUMER_KEY,
+    consumer_secret = .TWITTER_CONSUMER_SECRET
+  )
+  
+}    # End secrets
+
+
 # saveRDS(twitter_token, .TWITTER_PAT)
 if (TWEET_REFRESH_ENABLED) {
   if (file.exists('twitter_secrets.R')) source('twitter_secrets.R')
@@ -40,14 +47,19 @@ if (TWEET_REFRESH_ENABLED) {
 get_new_tweets <- function(max_id) {
   tip_words <- "(TIL|DYK|[Tt]ip|[Ll]earned|[Uu]seful|[Kk]now|[Tt]rick)"
   session_words <- "([Aa]vailable|[Oo]nline|[Ll]ink|[Ss]lide|[Ss]ession)"
-  rstudio_conf_search <- c("rstudioconf", "rstudio::conf",
-                           "rstudioconference", "rstudioconference18",
-                           "rstudioconference2018", "rstudio18",
-                           "rstudioconf18", "rstudioconf2018",
-                           "rstudio::conf18", "rstudio::conf2018")
+  rstudio_conf_search <- c(
+    "rstats", "Machinelearning", "DeepLearning", "Docker", 
+    "Biomart", "healthtech", "bioinfo", "genomics", 
+    "rstudioconf", "rstudio::conf",
+    "rstudioconference", "rstudioconference18",
+    "rstudioconference2018", "rstudio18",
+    "rstudioconf18", "rstudioconf2018",
+    "rstudio::conf18", "rstudio::conf2018")
   rstudio_conf_search <- paste(rstudio_conf_search, collapse = " OR ")
   
-  rsconf_tweets <- search_tweets(q = rstudio_conf_search, token = twitter_token, n = 1e5, max_id = max_id)
+  rsconf_tweets <- search_tweets(q = rstudio_conf_search, token = twitter_token, n = 1e5, max_id = max_id, 
+                                 lang = 'en', 
+                                 include_rts = FALSE)
   rsconf_tweets %>% 
     mutate(
       relates_tip = str_detect(text, tip_words),
@@ -88,6 +100,12 @@ if (needs_pulled) {
     rsconf_tweets <- arrange(new_tweets, desc(created_at))
   }
   saveRDS(rsconf_tweets, "data/rsconf_tweets.rds")
+  
+  ## some noisy tweet-bot to fillter out
+  #rsconf_tweets %>% filter(source == 'TweetDeck') %>% count(screen_name) %>% filter(n>20)  %>% select(screen_name) %>% unlist -> screen_name_rm
+  #rsconf_tweets_clean <- rsconf_tweets %>% filter(!screen_name %in% screen_name_rm)
+  #rsconf_tweets <- readRDS("data/archived/rsconf_tweets.rds")
+  #saveRDS(rsconf_tweets_clean, "data/rsconf_tweets.rds")
   cacheTime <- Sys.time()
 }
 

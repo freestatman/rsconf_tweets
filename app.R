@@ -65,7 +65,7 @@ ui <- fluidPage(
                    sep = ', '
                  ))),
                tags$p(
-                 HTML("&#x1F4BE;"), tags$a(href = 'https://github.com/gadenbuie/rsconf_tweets', 'View on GitHub')
+                 HTML("&#x1F4BE;"), tags$a(href = 'https://github.com/freestatman/rsconf_tweets', 'View on GitHub')
                  , "or", downloadLink('download_tweets', "Download Tweets")
                ),
                tags$p(
